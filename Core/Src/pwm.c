@@ -12,62 +12,92 @@
 
 extern TIM_HandleTypeDef htim2;
 extern osMessageQueueId_t pwmQueueHandle;
-static bool isr_ready = false;
-static char slip_buffer[MAX_BUFFER_SIZE];
-static char raw_buffer[MAX_BUFFER_SIZE];
-static size_t raw_buffer_idx;
+
+static bool task_ready = false;
+static bool slip_packet_continuation;
+static uint8_t *slip_packet_buffer;
+static uint32_t slip_packet_buffer_length;
+static uint32_t slip_packet_buffer_index;
+static char payload_buffer[MAX_BUFFER_SIZE];
+static size_t payload_buffer_index;
+
 static struct PwmLevels pwmLevels;
 
 static bool PwmIsrRecvChar(char *c, void *user_data) {
-    cirbuf_t *buf = (cirbuf_t *)user_data;
-    return buf_read(buf, c);
-}
-
-static bool PwmIsrWriteChar(char c, void *user_data) {
-    if (raw_buffer_idx >= MAX_BUFFER_SIZE)
+    if (slip_packet_buffer_index >= slip_packet_buffer_length)
         return false;
-    
-    raw_buffer[raw_buffer_idx++] = c;
+
+    *c = (char)(slip_packet_buffer[slip_packet_buffer_index++]);
     return true;
 }
 
-const static slips_config slipConfig = {
-    .encode_send_char = NULL, // Not used.
-    .encode_read_char = NULL, // Not used.
-    .decode_recv_char = PwmIsrRecvChar,
-    .decode_write_char = PwmIsrWriteChar,
-    .send_start = true,
-    .check_start = true,
-    .user_data = NULL
+static bool PwmIsrWriteChar(char c, void *user_data) {
+    if (payload_buffer_index >= MAX_BUFFER_SIZE)
+        return false;
+    
+    payload_buffer[payload_buffer_index++] = c;
+    return true;
+}
+
+static slips_context_t slips_context = {
+    .decode_recv_char_fn = PwmIsrRecvChar,
+    .decode_write_char_fn = PwmIsrWriteChar,
+    .check_start = true
 };
 
 void PwmIsrDataRecv(uint8_t *this_buffer, uint32_t this_length) {
-    if (!isr_ready)
+    if (!task_ready)
         return;
 
-    // Write to buffer as much as we can.
-    for (size_t i = 0; i < this_length; i++) {
-        if (!buf_write(buf, this_buffer[i]))
+    // Setup state.
+    slip_packet_buffer = this_buffer;
+    slip_packet_buffer_length = this_length;
+    slip_packet_buffer_index = 0;
+    
+    // Decode SLIP packet.
+    while (true) {
+        if (slip_packet_buffer_index >= slip_packet_buffer_length) {
+            // No more data to process.
             return;
+        }
+
+        if (payload_buffer_index >= MAX_BUFFER_SIZE) {
+            // Payload buffer overrun, discard packet.
+            payload_buffer_index = 0;
+            slip_packet_continuation = false;
+            return;
+        }
+
+        slips_context.check_start = !slip_packet_continuation;
+        if (slips_recv_packet(&slips_context)) {
+            // Now have a fully decoded packet.
+            slip_packet_continuation = false;
+            break;
+        }
+        
+        // Payload packet not decoded (fully?) due to invalid SLIP data.
+        slip_packet_continuation = (payload_buffer_index > 0);
     }
 
-    if (!slips_recv_packet()) {
-        // Failed to receive a packet, so clear the raw buffer.
-        raw_buffer_idx = 0;
+    // Check length of payload.
+    uint16_t payload_length = *(uint16_t *)(&payload_buffer[0]);
+    if (payload_length != payload_buffer_index) {
+        payload_buffer_index = 0;
+        return;
     }
 
-    // Work out the length of data in the buffer still to read.
+    // Application specific: always expecting a length of 3 (+2 overhead).
+    if (payload_length == 5) {
+        // Queue message.
+        osMessageQueuePut(pwmQueueHandle, (void *)&payload_buffer, 0, 0);
+    }
 
-    // 
-
-    // Construct message and queue it.
-    struct PwmLevels message = { 0 };
-    osMessageQueuePut(pwmQueueHandle, (void *)&message, 0, 0);
+    // Reset state.
+    payload_buffer_index = 0;
 }
 
 
-
-/// Non-ISR
+/// Non ISR
 
 static void PwmGetMessage(void) {
     while (osMessageQueueGet(pwmQueueHandle, &pwmLevels, NULL, osWaitForever) == osOK) {
@@ -76,9 +106,6 @@ static void PwmGetMessage(void) {
 }
 
 void PwmTaskMain(void) {
-    // Start the SLIP library.
-    slip_init(&slipConfig);
-
     // Start the base counter.
     HAL_TIM_Base_Start(&htim2);
 
@@ -91,7 +118,7 @@ void PwmTaskMain(void) {
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, 0); 
 
     // Signal to ISR ready for processing.
-    isr_ready = true;
+    task_ready = true;
 
     // Set the PWM levels.
     while (true) {

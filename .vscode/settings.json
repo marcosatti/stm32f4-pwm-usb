@@ -4,6 +4,7 @@
         "main.h": "c",
         "ssd1306.h": "c",
         "pwm.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "slips.h": "c"
     }
 }
