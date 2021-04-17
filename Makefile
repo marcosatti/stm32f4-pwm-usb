@@ -50,7 +50,7 @@ USB_DEVICE/App/usbd_cdc_if.c \
 USB_DEVICE/Target/usbd_conf.c \
 Drivers/stm32-ssd1306/ssd1306/ssd1306_fonts.c \
 Drivers/stm32-ssd1306/ssd1306/ssd1306.c \
-Drivers/slip/slip.c \
+Drivers/slips/slips.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c \
@@ -147,7 +147,7 @@ C_INCLUDES =  \
 -IUSB_DEVICE/App \
 -IUSB_DEVICE/Target \
 -IDrivers/stm32-ssd1306/ssd1306 \
--IDrivers/slip \
+-IDrivers/slips \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \

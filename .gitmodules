@@ -1,0 +1,3 @@
+[submodule "slips"]
+	path = Drivers/slips
+	url = git@github.com:marcosatti/slips.git
