@@ -1,6 +1,6 @@
 from serial import Serial
 from time import sleep
-import struct
+from struct import pack
 from random import randint
 from math import sin, pi
 
@@ -21,7 +21,7 @@ iteration = 0
 
 while True:
     result = calc(iteration)
-    port.write(struct.pack('BBB', result[0], result[1], result[2]))
+    port.write(pack('<BHBBBB', 0o300, 5, result[0], result[1], result[2], 0o300))
     port.flush()
     sleep(0.01)
     iteration += 1
