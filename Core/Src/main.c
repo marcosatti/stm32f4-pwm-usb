@@ -146,7 +146,7 @@ int main(void)
 
   /* Create the queue(s) */
   /* creation of pwmQueue */
-  pwmQueueHandle = osMessageQueueNew (16, sizeof(struct PwmLevels), &pwmQueue_attributes);
+  pwmQueueHandle = osMessageQueueNew (16, sizeof(struct pwm_levels), &pwmQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -397,7 +397,7 @@ void StartDisplayTask(void *argument)
 void StartPwmTask(void *argument)
 {
   /* USER CODE BEGIN StartPwmTask */
-  PwmTaskMain();
+  pwm_task_main();
   /* USER CODE END StartPwmTask */
 }
 

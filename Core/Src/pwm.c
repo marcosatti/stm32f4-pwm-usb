@@ -14,7 +14,7 @@
 extern TIM_HandleTypeDef htim2;
 extern osMessageQueueId_t pwmQueueHandle;
 
-static bool task_ready = false;
+static volatile bool task_ready;
 static bool slip_packet_continuation;
 static uint8_t *slip_packet_buffer;
 static uint32_t slip_packet_buffer_length;
@@ -22,8 +22,7 @@ static uint32_t slip_packet_buffer_index;
 static unsigned int recv_char_call_count;
 static char payload_buffer[MAX_BUFFER_SIZE];
 static size_t payload_buffer_index;
-
-static struct PwmLevels pwmLevels;
+static struct pwm_levels pwm_levels;
 
 static bool PwmIsrRecvChar(char *c, void *user_data) {
     recv_char_call_count++;
@@ -49,7 +48,7 @@ static slips_recv_context_t slips_context = {
     .check_start = true
 };
 
-void PwmIsrPushMessage(char *buffer, uint16_t length) {
+static void pwm_isr_push_message(char *buffer, uint16_t length) {
     // Application specific: always expecting a length of 3.
     if (length == 3) {
         // Queue message.
@@ -57,7 +56,7 @@ void PwmIsrPushMessage(char *buffer, uint16_t length) {
     }
 }
 
-void PwmIsrDataRecv(uint8_t *this_buffer, uint32_t this_length) {
+void pwm_isr_data_recv(uint8_t *this_buffer, uint32_t this_length) {
     if (!task_ready)
         return;
 
@@ -105,7 +104,7 @@ void PwmIsrDataRecv(uint8_t *this_buffer, uint32_t this_length) {
         goto out;
     }
 
-    PwmIsrPushMessage(&payload_buffer[2], payload_length - 2);
+    pwm_isr_push_message(&payload_buffer[2], payload_length - 2);
 
 out:
     // Reset state.
@@ -115,13 +114,13 @@ out:
 
 /// Non ISR
 
-static void PwmGetMessage(void) {
-    while (osMessageQueueGet(pwmQueueHandle, &pwmLevels, NULL, osWaitForever) == osOK) {
+static void pwm_pop_message(void) {
+    while (osMessageQueueGet(pwmQueueHandle, &pwm_levels, NULL, osWaitForever) == osOK) {
         return;
     }
 }
 
-void PwmTaskMain(void) {
+void pwm_task_main(void) {
     // Start the base counter.
     HAL_TIM_Base_Start(&htim2);
 
@@ -138,13 +137,13 @@ void PwmTaskMain(void) {
 
     // Set the PWM levels.
     while (true) {
-        PwmGetMessage();
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ((uint32_t)pwmLevels.R * MAX_CCR_VALUE) / 100); 
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ((uint32_t)pwmLevels.G * MAX_CCR_VALUE) / 100); 
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ((uint32_t)pwmLevels.B * MAX_CCR_VALUE) / 100); 
+        pwm_pop_message();
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ((uint32_t)pwm_levels.R * MAX_CCR_VALUE) / 100); 
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ((uint32_t)pwm_levels.G * MAX_CCR_VALUE) / 100); 
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ((uint32_t)pwm_levels.B * MAX_CCR_VALUE) / 100); 
     }
 }
 
-struct PwmLevels *GetPwmLevels(void) {
-    return &pwmLevels;
+struct pwm_levels *pwm_get_levels(void) {
+    return &pwm_levels;
 }

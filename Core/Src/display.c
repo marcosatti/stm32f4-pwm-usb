@@ -9,7 +9,7 @@ void DisplayTaskMain(void) {
     ssd1306_Init();
 
     while (true) {
-        struct PwmLevels *levels = GetPwmLevels();
+        struct pwm_levels *levels = pwm_get_levels();
 
         ssd1306_Fill(Black);
 
