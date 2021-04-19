@@ -365,7 +365,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    puts("Heartbeat\r\n");
+    printf("Heartbeat\r\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     osDelay(1000);
   }

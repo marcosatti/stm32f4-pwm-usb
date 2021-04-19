@@ -76,7 +76,7 @@ void pwm_isr_data_recv(uint8_t *this_buffer, uint32_t this_length) {
             // Payload buffer overrun, discard packet.
             payload_buffer_index = 0;
             slip_packet_continuation = false;
-            puts("Payload buffer overrun, discarding packet\r\n");
+            printf("Payload buffer overrun, discarding packet\r\n");
             return;
         }
 
@@ -85,13 +85,12 @@ void pwm_isr_data_recv(uint8_t *this_buffer, uint32_t this_length) {
         if (slips_recv_packet(&slips_context)) {
             // Now have a fully decoded packet.
             slip_packet_continuation = false;
-            puts("Received packet ok\r\n");
             break;
         }
         
         // Payload packet not decoded (fully?) due to invalid SLIP data / buffer overrun etc.
         slip_packet_continuation = recv_char_call_count > 1;
-        puts("Invalid or partial packet received\r\n");
+        printf("Invalid or partial packet received\r\n");
     }
 
     // Check length of payload.

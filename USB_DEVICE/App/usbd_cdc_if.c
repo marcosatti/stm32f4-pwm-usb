@@ -23,6 +23,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
+#include <stdint.h>
 #include "pwm.h"
 /* USER CODE END INCLUDE */
 
@@ -31,6 +32,10 @@
 /* Private macro -------------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+// Windows support: https://stackoverflow.com/questions/56490843/what-is-issue-with-stm32-virtual-com-port-i-can-not-open-it
+// 115200bps, 1 stop bit, no parity, 8bit
+static uint8_t line_coding[]  = { 0x00, 0xC2, 0x01, 0x00, 0x00, 0x00, 0x08 };
+   
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE END PV */
@@ -221,11 +226,11 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-
+      memcpy(line_coding, pbuf, sizeof(line_coding));
     break;
 
     case CDC_GET_LINE_CODING:
-
+      memcpy(pbuf, line_coding, sizeof(line_coding));
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:
