@@ -137,6 +137,7 @@ void pwm_task_main(void) {
     // Set the PWM levels.
     while (true) {
         pwm_pop_message();
+        //printf("PWM: Set: R = %hu%%, G = %hu%%, B = %hu%%\r\n", pwm_levels.R, pwm_levels.G, pwm_levels.B);
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ((uint32_t)pwm_levels.R * MAX_CCR_VALUE) / 100); 
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ((uint32_t)pwm_levels.G * MAX_CCR_VALUE) / 100); 
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, ((uint32_t)pwm_levels.B * MAX_CCR_VALUE) / 100); 

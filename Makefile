@@ -20,9 +20,9 @@ TARGET = stm32f4-pwm-usb
 # building variables
 ######################################
 # debug build?
-DEBUG = 1
+DEBUG = 0
 # optimization
-OPT = -O0
+OPT = -O3
 
 
 #######################################

@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/Core/Inc",
                 "${workspaceFolder}/Drivers/stm32-ssd1306/ssd1306",
-                "${workspaceFolder}/Drivers/slip",
+                "${workspaceFolder}/Drivers/slips",
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc",
                 "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/include",
